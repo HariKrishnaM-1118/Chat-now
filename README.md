@@ -93,3 +93,10 @@ For major changes, please open an issue first to discuss what you would like to 
 This project is open source — feel free to use it for learning, modifying, and building! 🚀
 
 ✅
+
+# Chat-now 🚀
+
+[Click here to see the working app](https://harikrishnam-1118.github.io/Chat-now/)
+
+## About the Project
+A simple chat application built with React and deployed using GitHub Pages.
