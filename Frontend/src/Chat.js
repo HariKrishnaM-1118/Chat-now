@@ -1,47 +1,72 @@
-import React, { useState, useEffect } from "react";
-import socket from "./socket";
+import React, { useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
+import { BsSun, BsMoon } from "react-icons/bs";
 import "./Chat.css";
 
-function Chat() {
+function Chat({ username, serverURL, room }) {
+  const [socket, setSocket] = useState(null);
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
+  const [darkTheme, setDarkTheme] = useState(false);
+  const messageEndRef = useRef(null);
 
   useEffect(() => {
-    socket.on("receiveMessage", (msg) => {
-      setChat((prev) => [...prev, { msg, type: "received" }]);
+    const newSocket = io(serverURL);
+    setSocket(newSocket);
+    newSocket.emit("joinRoom", { room });
+
+    newSocket.on("receiveMessage", ({ user, msg }) => {
+      setChat((prev) => [...prev, { user, msg, type: "received" }]);
     });
 
-    return () => socket.off("receiveMessage");
-  }, []);
+    return () => newSocket.disconnect();
+  }, [serverURL, room]);
 
   const sendMessage = () => {
-    if (message.trim() === "") return;
-    socket.emit("sendMessage", message);
-    setChat((prev) => [...prev, { msg: message, type: "sent" }]);
+    if (!message.trim()) return;
+    socket.emit("sendMessage", { user: username, msg: message, room });
+    setChat((prev) => [...prev, { user: "You", msg: message, type: "sent" }]);
     setMessage("");
   };
 
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat]);
+
   return (
-    <div className="chat-container">
-      <h2>ChatNow</h2>
-      <div className="messages">
-        {chat.map((item, index) => (
-          <div
-            key={index}
-            className={`msg ${item.type === "sent" ? "sent" : "received"}`}
-          >
-            {item.msg}
+    <div className={`chat-wrapper ${darkTheme ? "dark" : ""}`}>
+      <div className="chat-header">
+        <span>{room ? room.toUpperCase() : "Chat Room"} | Hello, {username || "Guest"}
+</span>
+        <button
+          className="theme-toggle"
+          onClick={() => setDarkTheme(!darkTheme)}
+        >
+          {darkTheme ? <BsSun /> : <BsMoon />}
+        </button>
+      </div>
+
+      <div className="chat-box">
+        {chat.map((c, i) => (
+          <div key={i} className={`chat-message ${c.type}`}>
+            <div className="chat-bubble">
+              <strong>{c.user}</strong>
+              <div>{c.msg}</div>
+            </div>
           </div>
         ))}
+        <div ref={messageEndRef} />
       </div>
-      <div className="input-area">
+
+      <div className="chat-input">
         <input
           type="text"
+          placeholder="Type your message..."
           value={message}
-          placeholder="Type a message..."
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-        <button onClick={sendMessage}>Send</button>
+        <button onClick={sendMessage}>Send ➤</button>
       </div>
     </div>
   );

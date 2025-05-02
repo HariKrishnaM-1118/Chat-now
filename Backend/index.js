@@ -16,10 +16,9 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("sendMessage", (msg) => {
-    // when one client sends, broadcast to all others
-    socket.broadcast.emit("receiveMessage", msg);
-  });
+socket.on("sendMessage", ({ user, msg }) => {
+  socket.broadcast.emit("receiveMessage", { user, msg });
+});
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
@@ -29,3 +28,4 @@ io.on("connection", (socket) => {
 server.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
 });
+
